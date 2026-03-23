@@ -1,0 +1,11 @@
+timm
+huggingface_hub
+einops
+h5py
+torch
+torchvision
+torchmetrics
+pandas
+numpy
+tqdm
+stainlib
