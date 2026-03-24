@@ -1,3 +1,4 @@
+import argparse
 import os
 import random
 
@@ -9,26 +10,32 @@ from tqdm import tqdm
 
 from config import (
     OUTPUT_DIR, LR, MOMENTUM, WEIGHT_DECAY,
-    NUM_EPOCHS, PATIENCE, TRAIN_BS, SEED,
+    NUM_EPOCHS, PATIENCE, TRAIN_BS, SEED, SUPPORTED_MODELS,
 )
 from dataset import PrecomputedDataset
 from model import build_linear_probe
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--model', type=str, default='uni2h', choices=SUPPORTED_MODELS)
+args = parser.parse_args()
 
 torch.manual_seed(SEED)
 random.seed(SEED)
 np.random.seed(SEED)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f'Device: {device}')
+print(f'Device: {device}  Model: {args.model}')
+
+model_dir = os.path.join(OUTPUT_DIR, args.model)
 
 
 def load(name):
-    return torch.load(os.path.join(OUTPUT_DIR, name), weights_only=True)
+    return torch.load(os.path.join(model_dir, name), weights_only=True)
 
 
 train_dicts = [load('train_base.pt')]
 i = 0
-while os.path.exists(os.path.join(OUTPUT_DIR, f'train_aug_{i}.pt')):
+while os.path.exists(os.path.join(model_dir, f'train_aug_{i}.pt')):
     train_dicts.append(load(f'train_aug_{i}.pt'))
     i += 1
 
@@ -40,19 +47,19 @@ val_dict = load('val.pt')
 val_ds   = PrecomputedDataset(val_dict['features'], val_dict['labels'])
 
 feat_dim = train_dicts[0]['features'].shape[1]
-print(f'Train: {len(train_ds)} samples ({len(train_dicts)} passes)  Val: {len(val_ds)} samples  feat_dim: {feat_dim}')
+print(f'Train: {len(train_ds)} samples ({len(train_dicts)} passes)  Val: {len(val_ds)}  feat_dim: {feat_dim}')
 
 train_loader = DataLoader(train_ds, batch_size=TRAIN_BS, shuffle=True,  num_workers=2)
 val_loader   = DataLoader(val_ds,   batch_size=256,      shuffle=False, num_workers=2)
 
-linear_probe = build_linear_probe(device)
+linear_probe = build_linear_probe(feat_dim, device)
 optimizer    = torch.optim.SGD(linear_probe.parameters(), lr=LR, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 criterion    = torch.nn.CrossEntropyLoss()
 acc_metric   = torchmetrics.Accuracy('multiclass', num_classes=2)
 
 best_val_acc = 0.0
 best_epoch   = 0
-save_path    = os.path.join(OUTPUT_DIR, 'best_linear_probe.pth')
+save_path    = os.path.join(model_dir, 'best_linear_probe.pth')
 
 for epoch in range(NUM_EPOCHS):
     linear_probe.train()

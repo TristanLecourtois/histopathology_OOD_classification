@@ -1,32 +1,39 @@
+import argparse
 import os
 
 import pandas as pd
 import torch
 import torch.nn.functional as F
 
-from config import OUTPUT_DIR
+from config import OUTPUT_DIR, SUPPORTED_MODELS
 from model import build_linear_probe
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--model', type=str, default='uni2h', choices=SUPPORTED_MODELS)
+args = parser.parse_args()
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f'Device: {device}')
+print(f'Device: {device}  Model: {args.model}')
+
+model_dir = os.path.join(OUTPUT_DIR, args.model)
 
 
 def load(name):
-    return torch.load(os.path.join(OUTPUT_DIR, name), weights_only=True)
+    return torch.load(os.path.join(model_dir, name), weights_only=True)
 
 
-linear_probe = build_linear_probe(device)
+feat_dim = load('train_base.pt')['features'].shape[1]
+linear_probe = build_linear_probe(feat_dim, device)
 linear_probe.load_state_dict(load('best_linear_probe.pth'))
 linear_probe.eval()
 
 test_files = ['test_base.pt']
 i = 0
-while os.path.exists(os.path.join(OUTPUT_DIR, f'test_tta_{i}.pt')):
+while os.path.exists(os.path.join(model_dir, f'test_tta_{i}.pt')):
     test_files.append(f'test_tta_{i}.pt')
     i += 1
 
 print(f'TTA views: {len(test_files)}')
-
 test_ids = load('test_base.pt')['ids']
 
 all_probs = []
@@ -46,7 +53,7 @@ submission = (
     .sort_index()
 )
 
-out_path = os.path.join(OUTPUT_DIR, 'submission.csv')
+out_path = os.path.join(OUTPUT_DIR, f'submission_{args.model}.csv')
 submission.to_csv(out_path)
 print(f'Saved: {out_path}  ({len(submission)} predictions)')
 print(submission['Pred'].value_counts().to_string())
