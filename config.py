@@ -27,8 +27,8 @@ TIMM_KWARGS = {
 FEAT_DIM = 1536
 
 EXTRACT_BATCH_SIZE = 64
-N_AUG = 1
-N_TTA = 2
+N_AUG = 3
+N_TTA = 5
 
 LR           = 2e-4
 MOMENTUM     = 0.9

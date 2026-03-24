@@ -23,4 +23,9 @@ def load_feature_extractor(device: torch.device):
 
 
 def build_linear_probe(device: torch.device) -> torch.nn.Module:
-    return torch.nn.Linear(FEAT_DIM, 2).to(device)
+    return torch.nn.Sequential(
+        torch.nn.Linear(FEAT_DIM, 512),
+        torch.nn.ReLU(),
+        torch.nn.Dropout(0.3),
+        torch.nn.Linear(512, 2),
+    ).to(device)
