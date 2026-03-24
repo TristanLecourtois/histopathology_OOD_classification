@@ -1,6 +1,7 @@
 import os
 import random
 
+import h5py
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -12,7 +13,7 @@ from config import (
 )
 from dataset import HistoDataset
 from model import load_feature_extractor
-from transforms import make_aug_transform
+from transforms import ReinhardTransform, make_base_transform, make_aug_transform
 
 try:
     from kaggle_secrets import UserSecretsClient
@@ -31,8 +32,16 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Device: {device}')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-feature_extractor, base_transform = load_feature_extractor(device)
-aug_transform = make_aug_transform(base_transform)
+# Load reference image for Reinhard normalization (same ID as in the original notebook)
+with h5py.File(TRAIN_PATH, 'r') as hdf:
+    ref_img = np.array(hdf['16']['img'])
+
+reinhard = ReinhardTransform(ref_img)
+print('Reinhard normalizer fitted on reference image.')
+
+feature_extractor, timm_transform = load_feature_extractor(device)
+base_transform = make_base_transform(timm_transform, reinhard)
+aug_transform  = make_aug_transform(timm_transform, reinhard)
 
 
 @torch.no_grad()
