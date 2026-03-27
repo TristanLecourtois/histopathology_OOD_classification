@@ -3,9 +3,9 @@
 ## Setup (Kaggle)
 
 ```python
-!pip install timm huggingface_hub einops optimum git+https://github.com/sebastianffx/stainlib.git -q
-!rm -rf /kaggle/working/project
 !git clone https://github.com/TristanLecourtois/-histopathology_OOD_classification.git /kaggle/working/project
+!pip install -r /kaggle/working/project/requirements.txt -q
+!pip install git+https://github.com/sebastianffx/stainlib.git -q
 ```
 
 ```python

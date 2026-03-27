@@ -8,4 +8,5 @@ torchmetrics
 pandas
 numpy
 tqdm
-stainlib
+optimum
+transformers
