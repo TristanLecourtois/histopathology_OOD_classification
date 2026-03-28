@@ -63,3 +63,29 @@ and saves the final predictions to `/kaggle/working/submission_{MODEL}.csv`.
 | `--n-aug`       | `3`     | Augmentation passes on train         |
 | `--n-tta`       | `5`     | TTA passes on test                   |
 | `--no-reinhard` | off     | Disable Reinhard stain normalization |
+
+---
+
+## DANN — Domain Adversarial Training
+
+**What it is:**
+DANN forces the feature extractor to produce embeddings that are indistinguishable across hospitals (centers).
+It does this by adding a domain classifier that tries to predict which center an image comes from,
+and a gradient reversal layer (GRL) that flips the gradients from this classifier.
+The label classifier is thus trained on features that are both discriminative for tumor/non-tumor AND blind to the center.
+
+**How it works:**
+- The label classifier is trained normally (minimize label loss)
+- The domain classifier tries to predict the center (0, 3 or 4 in train)
+- The GRL reverses its gradients → the shared features are pushed to be domain-invariant
+- Alpha (λ) starts at 0 and increases during training so domain adaptation kicks in gradually
+
+**Uses the same extracted features** — no need to re-run `extract_features.py`.
+
+**Commands:**
+```python
+!python /kaggle/working/project/dann_train.py --model MODEL
+!python /kaggle/working/project/dann_predict.py --model MODEL
+```
+
+Submission saved to `/kaggle/working/submission_{MODEL}_dann.csv`.

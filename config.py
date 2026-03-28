@@ -20,3 +20,6 @@ PATIENCE     = 10
 TRAIN_BS     = 8
 
 SEED = 0
+
+DANN_LAMBDA = 1.0
+DANN_GAMMA  = 10.0
