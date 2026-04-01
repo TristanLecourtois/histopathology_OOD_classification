@@ -24,34 +24,37 @@ Applies optional Reinhard stain normalization and HED augmentation.
 Results are saved as `.pt` files in `/kaggle/working/{model}/`.
 If interrupted, relaunch the same command — already computed files are skipped.
 ```python
-!HF_TOKEN=$HF_TOKEN python /kaggle/working/project/extract_features.py --model MODEL [options]
+!HF_TOKEN=$HF_TOKEN python /kaggle/working/project/scripts/extract_features.py --model MODEL [options]
 ```
 
 **Step 2 — Training**
 Trains a linear classifier on top of the precomputed embeddings.
 Saves the best model weights based on validation accuracy.
 ```python
-!python /kaggle/working/project/train.py --model MODEL
+!python /kaggle/working/project/scripts/train.py --model MODEL
 ```
 
 **Step 3 — Prediction**
 Loads the trained classifier, runs it on all test embeddings (with TTA averaging),
 and saves the final predictions to `/kaggle/working/submission_{MODEL}.csv`.
 ```python
-!python /kaggle/working/project/predict.py --model MODEL
+!python /kaggle/working/project/scripts/predict.py --model MODEL
 ```
 
 ---
 
 ## Models
 
-| Name          | Gated | feat_dim |
-|---------------|-------|----------|
-| `uni2h`       | yes   | 1536     |
-| `hibou-b`     | no    | 768      |
-| `hibou-l`     | yes   | 1024     |
-| `virchow2`    | yes   | 2560     |
-| `h-optimus-1` | yes   | 1536     |
+| Name          | Gated | feat_dim | Notes                                      |
+|---------------|-------|----------|--------------------------------------------|
+| `uni2h`       | yes   | 1536     | UNI2-h ViT-H, MahmoodLab                  |
+| `hibou-b`     | no    | 768      | ViT-B, histai                              |
+| `hibou-l`     | yes   | 1024     | ViT-L, histai (request access on HF)       |
+| `virchow2`    | yes   | 2560     | CLS + mean patch tokens, Paige AI          |
+| `h-optimus-1` | yes   | 1536     | ViT-H, Bioptimus                           |
+| `genbio`      | local | 4608     | Requires `model.pth` at `GENBIO_WEIGHTS_PATH` |
+
+For `genbio`, upload `model.pth` as a Kaggle dataset and set `GENBIO_WEIGHTS_PATH` in `config.py`.
 
 ---
 
@@ -63,6 +66,13 @@ and saves the final predictions to `/kaggle/working/submission_{MODEL}.csv`.
 | `--n-aug`       | `3`     | Augmentation passes on train         |
 | `--n-tta`       | `5`     | TTA passes on test                   |
 | `--no-reinhard` | off     | Disable Reinhard stain normalization |
+
+## Options — train.py / dann_train.py
+
+| Argument      | Default | Description                          |
+|---------------|---------|--------------------------------------|
+| `--model`     | `uni2h` | Must match the extracted features    |
+| `--mixstyle`  | off     | Enable MixStyle feature augmentation |
 
 ---
 
@@ -84,8 +94,35 @@ The label classifier is thus trained on features that are both discriminative fo
 
 **Commands:**
 ```python
-!python /kaggle/working/project/dann_train.py --model MODEL
-!python /kaggle/working/project/dann_predict.py --model MODEL
+!python /kaggle/working/project/scripts/dann_train.py --model MODEL
+!python /kaggle/working/project/scripts/dann_predict.py --model MODEL
 ```
 
 Submission saved to `/kaggle/working/submission_{MODEL}_dann.csv`.
+
+---
+
+## MixStyle
+
+MixStyle mixes instance-level feature statistics (mean and std) between pairs of training samples to simulate cross-domain style variation. Enable it with `--mixstyle` on `train.py` or `dann_train.py`:
+
+```python
+!python /kaggle/working/project/scripts/train.py --model MODEL --mixstyle
+!python /kaggle/working/project/scripts/dann_train.py --model MODEL --mixstyle
+```
+
+---
+
+## Visualization
+
+**RGB distribution across centers:**
+```python
+!python /kaggle/working/project/plots/plot_rgb_distribution.py
+```
+Saves `rgb_distribution.pdf` to `/kaggle/working/`.
+
+**Stain normalization (before / after Reinhard):**
+```python
+!python /kaggle/working/project/plots/plot_stain_normalization.py
+```
+Saves `stain_normalization.pdf` to `/kaggle/working/`.

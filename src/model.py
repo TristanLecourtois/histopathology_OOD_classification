@@ -23,6 +23,23 @@ _UNI2H_KWARGS = {
 }
 
 
+class _GenBioTransform:
+    def __init__(self):
+        import torchvision.transforms as T
+        self._transform = T.Compose([
+            T.ToPILImage(),
+            T.Resize(224),
+            T.CenterCrop(224),
+            T.ToTensor(),
+            T.Normalize(mean=(0.697, 0.575, 0.728), std=(0.188, 0.240, 0.187)),
+        ])
+
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        if x.is_floating_point():
+            x = (x.clamp(0, 1) * 255).byte()
+        return self._transform(x)
+
+
 class _HibouTransform:
     """Wraps HuggingFace AutoImageProcessor as a callable transform."""
     def __init__(self, processor):
@@ -102,8 +119,15 @@ def load_feature_extractor(model_name: str, device: torch.device):
         transform = create_transform(**resolve_data_config(base_model.pretrained_cfg, model=base_model))
         feat_dim  = 2560
 
+    elif model_name == 'genbio':
+        from genbio_pathfm.model import GenBio_PathFM_Inference
+        from config import GENBIO_WEIGHTS_PATH
+        model     = GenBio_PathFM_Inference(GENBIO_WEIGHTS_PATH, device=str(device))
+        transform = _GenBioTransform()
+        feat_dim  = 4608
+
     else:
-        raise ValueError(f'Unknown model: {model_name}. Choose from: {", ".join(["uni2h", "hibou-b", "hibou-l", "virchow2", "h-optimus-1"])}')
+        raise ValueError(f'Unknown model: {model_name}. Choose from: {", ".join(["uni2h", "hibou-b", "hibou-l", "virchow2", "h-optimus-1", "genbio"])}')
 
     print(f'{model_name} loaded on {device}  (feat_dim={feat_dim})')
     return model, transform, feat_dim

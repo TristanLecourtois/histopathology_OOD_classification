@@ -6,7 +6,9 @@ VAL_PATH   = os.path.join(DATA_DIR, 'val.h5')
 TEST_PATH  = os.path.join(DATA_DIR, 'test.h5')
 OUTPUT_DIR = '/kaggle/working'
 
-SUPPORTED_MODELS = ['uni2h', 'hibou-b', 'hibou-l', 'virchow2', 'h-optimus-1']
+SUPPORTED_MODELS = ['uni2h', 'hibou-b', 'hibou-l', 'virchow2', 'h-optimus-1', 'genbio']
+
+GENBIO_WEIGHTS_PATH = '/kaggle/working/model.pth'
 
 EXTRACT_BATCH_SIZE = 64
 N_AUG = 3
