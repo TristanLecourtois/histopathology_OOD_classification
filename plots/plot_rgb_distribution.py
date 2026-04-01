@@ -5,7 +5,7 @@ import matplotlib.patches as mpatches
 
 TRAIN_PATH = '/kaggle/input/competitions/mva-dlmi-2026-histopathology-ood-classification/train.h5'
 VAL_PATH   = '/kaggle/input/competitions/mva-dlmi-2026-histopathology-ood-classification/val.h5'
-OUT_PATH   = '/kaggle/working/rgb_distribution.pdf'
+OUT_PATH   = '/kaggle/working/rgb_distribution.png'
 
 N_SAMPLES_PER_CENTER = 300
 

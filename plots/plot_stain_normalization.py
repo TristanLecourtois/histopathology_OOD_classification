@@ -5,7 +5,7 @@ import stainlib.utils.stain_utils as stain_utils
 from stainlib.normalization.normalizer import ReinhardStainNormalizer
 
 TRAIN_PATH = '/kaggle/input/competitions/mva-dlmi-2026-histopathology-ood-classification/train.h5'
-OUT_PATH   = '/kaggle/working/stain_normalization.pdf'
+OUT_PATH   = '/kaggle/working/stain_normalization.png'
 
 REF_ID     = '16'
 CENTERS    = [0, 3, 4]
