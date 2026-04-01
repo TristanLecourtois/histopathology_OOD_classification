@@ -14,9 +14,11 @@ from config import (
 )
 from dataset import PrecomputedDataset
 from model import build_linear_probe
+from mixstyle import MixStyle
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', type=str, default='uni2h', choices=SUPPORTED_MODELS)
+parser.add_argument('--mixstyle', action='store_true')
 args = parser.parse_args()
 
 torch.manual_seed(SEED)
@@ -52,6 +54,7 @@ print(f'Train: {len(train_ds)} samples ({len(train_dicts)} passes)  Val: {len(va
 train_loader = DataLoader(train_ds, batch_size=TRAIN_BS, shuffle=True,  num_workers=2)
 val_loader   = DataLoader(val_ds,   batch_size=256,      shuffle=False, num_workers=2)
 
+mixstyle     = MixStyle(p=0.5, alpha=0.1).to(device) if args.mixstyle else None
 linear_probe = build_linear_probe(feat_dim, device)
 optimizer    = torch.optim.SGD(linear_probe.parameters(), lr=LR, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 criterion    = torch.nn.CrossEntropyLoss()
@@ -67,6 +70,8 @@ for epoch in range(NUM_EPOCHS):
     for x, y in tqdm(train_loader, desc=f'Epoch {epoch+1:3d} train', leave=False):
         x, y = x.to(device), y.to(device)
         optimizer.zero_grad()
+        if mixstyle is not None:
+            x = mixstyle(x)
         logits = linear_probe(x)
         loss   = criterion(logits, y)
         loss.backward()

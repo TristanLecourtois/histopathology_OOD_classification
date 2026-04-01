@@ -16,9 +16,11 @@ from config import (
     DANN_LAMBDA, DANN_GAMMA,
 )
 from dann import DANNModel, get_alpha
+from mixstyle import MixStyle
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', type=str, default='uni2h', choices=SUPPORTED_MODELS)
+parser.add_argument('--mixstyle', action='store_true')
 args = parser.parse_args()
 
 torch.manual_seed(SEED)
@@ -70,6 +72,7 @@ print(f'Train: {len(train_ds)}  Val: {len(val_ds)}  feat_dim: {feat_dim}')
 train_loader = DataLoader(train_ds, batch_size=TRAIN_BS, shuffle=True,  num_workers=2)
 val_loader   = DataLoader(val_ds,   batch_size=256,      shuffle=False, num_workers=2)
 
+mixstyle    = MixStyle(p=0.5, alpha=0.1).to(device) if args.mixstyle else None
 model       = DANNModel(feat_dim, num_domains).to(device)
 optimizer   = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 label_crit  = nn.CrossEntropyLoss()
@@ -88,6 +91,8 @@ for epoch in range(NUM_EPOCHS):
     for x, y, d in tqdm(train_loader, desc=f'Epoch {epoch+1:3d} train', leave=False):
         x, y, d = x.to(device), y.to(device), d.to(device)
         optimizer.zero_grad()
+        if mixstyle is not None:
+            x = mixstyle(x)
         label_logits, domain_logits = model(x, alpha=alpha)
         loss = label_crit(label_logits, y) + DANN_LAMBDA * domain_crit(domain_logits, d)
         loss.backward()
